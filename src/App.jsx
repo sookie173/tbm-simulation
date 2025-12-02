@@ -10,7 +10,10 @@ const TBMMISimulation = () => {
   const [frequency, setFrequency] = useState(25000);
   const [txPower, setTxPower] = useState(0.5);
   const [distance, setDistance] = useState(1.5);
-  const [bitRate, setBitRate] = useState(250);
+
+  // Max bit rate = carrier freq / 10 (need ~10 cycles per bit for reliable FSK in noisy env)
+  const maxBitRate = Math.floor(frequency / 10);
+  const bitRate = Math.min(maxBitRate, 1000); // Cap at 1000 bps for practical use
   
   const [txLoopDiameter, setTxLoopDiameter] = useState(30);
   const [rxLoopDiameter, setRxLoopDiameter] = useState(30);
@@ -640,6 +643,7 @@ const TBMMISimulation = () => {
         <div className="status-row">
           <span>TX: {calculations.txL.toFixed(1)}µH Q={calculations.txQ.toFixed(0)}</span>
           <span>RX: {calculations.rxL.toFixed(1)}µH Q={calculations.rxQ.toFixed(0)}</span>
+          <span>Bit Rate: {bitRate}bps (max {maxBitRate})</span>
           <span>V_ind: {calculations.V_induced.toFixed(1)}µV</span>
           <span>V_res: {calculations.V_after_resonance.toFixed(2)}mV</span>
           <span className={calculations.SNR_dB > 12 ? "good" : "bad"}>SNR: {calculations.SNR_dB.toFixed(1)}dB</span>
