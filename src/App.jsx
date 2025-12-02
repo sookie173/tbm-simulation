@@ -99,11 +99,12 @@ const TBMMISimulation = () => {
     return () => clearInterval(interval);
   }, [isRunning]);
   
+  // Communication cycle: 1 transmission per second (20 frames × 50ms = 1000ms)
   useEffect(() => {
-    const cycle = time % 200;
-    if (cycle < 180) { setNodeState('sleep'); setSignalStrength(0); }
-    else if (cycle < 185) { setNodeState('wake'); setSignalStrength(0.3); }
-    else if (cycle < 195) { setNodeState('tx'); setSignalStrength(Math.sin((cycle - 185) * 0.5) * 0.5 + 0.5); }
+    const cycle = time % 20;
+    if (cycle < 14) { setNodeState('sleep'); setSignalStrength(0); }
+    else if (cycle < 16) { setNodeState('wake'); setSignalStrength(0.3); }
+    else if (cycle < 19) { setNodeState('tx'); setSignalStrength(Math.sin((cycle - 16) * 1.0) * 0.5 + 0.5); }
     else { setNodeState('rx'); setSignalStrength(0.2); }
   }, [time]);
 
