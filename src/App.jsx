@@ -68,18 +68,28 @@ const TBMMISimulation = () => {
     const B_rx = MU_0 * H_rx;
     
     const V_induced = rxTurns * rxArea * omega * B_rx;
-    const effectiveQ = Math.min(rxQ, 150);
+    const effectiveQ = Math.min(rxQ, 100);  // Realistic Q limit (was 150 - too optimistic)
     const V_after_resonance = V_induced * effectiveQ;
     
+    // Power budget - synced with animation cycle (3 TX frames out of 20 = 15% duty)
     const sleepCurrent_uA = 4;
-    const txCurrent_mA = txPower * 1000;
-    const txDutyCycle = 0.01;
-    const avgCurrent_uA = sleepCurrent_uA * (1 - txDutyCycle) + txCurrent_mA * 1000 * txDutyCycle;
+    const wakeCurrent_mA = 20;  // MCU + oscillator wake
+    const txCurrent_mA = txPower * 1000;  // Full coil current
+    const rxCurrent_mA = 25;  // MCU + ADC
+    // Duty cycles from animation: sleep 70%, wake 10%, TX 15%, RX 5%
+    const avgCurrent_uA = sleepCurrent_uA * 0.70 +
+                          wakeCurrent_mA * 1000 * 0.10 +
+                          txCurrent_mA * 1000 * 0.15 +
+                          rxCurrent_mA * 1000 * 0.05;
     const batteryLife_hours = (batteryMah * 1000) / avgCurrent_uA;
     const batteryLife_years = batteryLife_hours / 8760;
-    
-    const noiseFloor_V = 200e-6;
-    const SNR_linear = V_after_resonance / noiseFloor_V;
+
+    // Realistic noise floor for TBM environment (electrical noise, motor interference)
+    const noiseFloor_V = 500e-6;  // 500µV (was 200µV - too optimistic)
+    // Coupling efficiency factor (misalignment, non-ideal coils, connector losses)
+    const couplingEfficiency = 0.6;  // 60% of ideal
+    const V_practical = V_after_resonance * couplingEfficiency;
+    const SNR_linear = V_practical / noiseFloor_V;
     const SNR_dB = 20 * Math.log10(Math.max(SNR_linear, 1e-9));
     const linkMargin = SNR_dB - 12;
     
@@ -87,8 +97,10 @@ const TBMMISimulation = () => {
       skinDepth, attenuation_dB, attenuationFactor,
       txArea: txArea * 1e4, txL: txL * 1e6, txQ, txR_ac: txR_ac * 1000,
       rxArea: rxArea * 1e4, rxL: rxL * 1e6, rxQ, rxR_ac: rxR_ac * 1000, effectiveQ,
-      magneticMoment, H_rx: H_rx * 1e6, V_induced: V_induced * 1e6, V_after_resonance: V_after_resonance * 1e3,
-      avgCurrent_uA, batteryLife_years, SNR_dB, linkMargin, noiseFloor_V: noiseFloor_V * 1e6,
+      magneticMoment, H_rx: H_rx * 1e6, V_induced: V_induced * 1e6,
+      V_after_resonance: V_after_resonance * 1e3, V_practical: V_practical * 1e3,
+      avgCurrent_uA, batteryLife_years, batteryLife_hours, txCurrent_mA,
+      SNR_dB, linkMargin, noiseFloor_V: noiseFloor_V * 1e6,
       Q: rxQ, L: rxL * 1e6, C: rxC * 1e9
     };
   }, [frequency, muckConductivity, distance, txLoopDiameter, rxLoopDiameter, txTurns, rxTurns, txPower, batteryMah, wireGauge]);
@@ -166,7 +178,7 @@ const TBMMISimulation = () => {
             <line x1="20" y1="7" x2="60" y2="7" stroke="#f0883e" strokeWidth="1" />
             <line x1="20" y1="37" x2="60" y2="37" stroke="#f0883e" strokeWidth="1" />
           </g>
-          <text x="160" y="45" textAnchor="middle" fill="#ffa657" fontSize="9">{nodeState === 'tx' ? `${txPower.toFixed(1)}A peak` : '0A'}</text>
+          <text x="160" y="45" textAnchor="middle" fill="#ffa657" fontSize="9">{nodeState === 'tx' ? `${calculations.txCurrent_mA.toFixed(0)}mA` : '0A'}</text>
         </g>
         
         <g transform="translate(20, 215)">
