@@ -92,7 +92,7 @@ const TBMMISimulation = () => {
                           txCurrent_mA * 1000 * txDuty +
                           rxCurrent_mA * 1000 * rxDuty;
     const batteryLife_hours = (batteryMah * 1000) / avgCurrent_uA;
-    const batteryLife_years = batteryLife_hours / 8760;
+    const batteryLife_days = batteryLife_hours / 24;
 
     // Realistic noise floor for TBM environment (electrical noise, motor interference)
     const noiseFloor_V = 500e-6;  // 500µV (was 200µV - too optimistic)
@@ -109,7 +109,7 @@ const TBMMISimulation = () => {
       rxArea: rxArea * 1e4, rxL: rxL * 1e6, rxQ, rxR_ac: rxR_ac * 1000, effectiveQ,
       magneticMoment, H_rx: H_rx * 1e6, V_induced: V_induced * 1e6,
       V_after_resonance: V_after_resonance * 1e3, V_practical: V_practical * 1e3,
-      avgCurrent_uA, batteryLife_years, batteryLife_hours, txCurrent_mA,
+      avgCurrent_uA, batteryLife_days, batteryLife_hours, txCurrent_mA,
       SNR_dB, linkMargin, noiseFloor_V: noiseFloor_V * 1e6,
       Q: rxQ, L: rxL * 1e6, C: rxC * 1e9
     };
@@ -363,7 +363,7 @@ const TBMMISimulation = () => {
       <g transform="translate(760, 470)">
         <rect x="0" y="0" width="150" height="50" fill="#161b22" stroke="#30363d" rx="4" />
         <text x="75" y="18" textAnchor="middle" fill="#e6edf3" fontSize="11" fontWeight="bold">Battery Life</text>
-        <text x="75" y="38" textAnchor="middle" fill="#3fb950" fontSize="14">{calculations.batteryLife_years.toFixed(1)} years</text>
+        <text x="75" y="38" textAnchor="middle" fill="#3fb950" fontSize="14">{calculations.batteryLife_days.toFixed(0)} days</text>
       </g>
       
       <g transform="translate(80, 470)">
