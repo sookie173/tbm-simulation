@@ -21,6 +21,7 @@ const TBMMISimulation = () => {
   const [nodeState, setNodeState] = useState('sleep');
   const [batteryMah, setBatteryMah] = useState(3500);
   const [signalStrength, setSignalStrength] = useState(0);
+  const [txInterval, setTxInterval] = useState(1); // seconds between transmissions
   
   const MU_0 = 4 * Math.PI * 1e-7;
   
@@ -71,16 +72,22 @@ const TBMMISimulation = () => {
     const effectiveQ = Math.min(rxQ, 100);  // Realistic Q limit (was 150 - too optimistic)
     const V_after_resonance = V_induced * effectiveQ;
     
-    // Power budget - synced with animation cycle (3 TX frames out of 20 = 15% duty)
+    // Power budget - duty cycle depends on TX interval
     const sleepCurrent_uA = 4;
     const wakeCurrent_mA = 20;  // MCU + oscillator wake
     const txCurrent_mA = txPower * 1000;  // Full coil current
     const rxCurrent_mA = 25;  // MCU + ADC
-    // Duty cycles from animation: sleep 70%, wake 10%, TX 15%, RX 5%
-    const avgCurrent_uA = sleepCurrent_uA * 0.70 +
-                          wakeCurrent_mA * 1000 * 0.10 +
-                          txCurrent_mA * 1000 * 0.15 +
-                          rxCurrent_mA * 1000 * 0.05;
+    // Active time is fixed ~300ms per cycle (wake 100ms, TX 150ms, RX 50ms)
+    const activeTime_ms = 300;
+    const cycleTime_ms = txInterval * 1000;
+    const sleepDuty = (cycleTime_ms - activeTime_ms) / cycleTime_ms;
+    const wakeDuty = 100 / cycleTime_ms;
+    const txDuty = 150 / cycleTime_ms;
+    const rxDuty = 50 / cycleTime_ms;
+    const avgCurrent_uA = sleepCurrent_uA * sleepDuty +
+                          wakeCurrent_mA * 1000 * wakeDuty +
+                          txCurrent_mA * 1000 * txDuty +
+                          rxCurrent_mA * 1000 * rxDuty;
     const batteryLife_hours = (batteryMah * 1000) / avgCurrent_uA;
     const batteryLife_years = batteryLife_hours / 8760;
 
@@ -103,7 +110,7 @@ const TBMMISimulation = () => {
       SNR_dB, linkMargin, noiseFloor_V: noiseFloor_V * 1e6,
       Q: rxQ, L: rxL * 1e6, C: rxC * 1e9
     };
-  }, [frequency, muckConductivity, distance, txLoopDiameter, rxLoopDiameter, txTurns, rxTurns, txPower, batteryMah, wireGauge]);
+  }, [frequency, muckConductivity, distance, txLoopDiameter, rxLoopDiameter, txTurns, rxTurns, txPower, batteryMah, wireGauge, txInterval]);
   
   useEffect(() => {
     if (!isRunning) return;
@@ -111,14 +118,17 @@ const TBMMISimulation = () => {
     return () => clearInterval(interval);
   }, [isRunning]);
   
-  // Communication cycle: 1 transmission per second (20 frames × 50ms = 1000ms)
+  // Communication cycle: configurable TX interval
   useEffect(() => {
-    const cycle = time % 20;
-    if (cycle < 14) { setNodeState('sleep'); setSignalStrength(0); }
-    else if (cycle < 16) { setNodeState('wake'); setSignalStrength(0.3); }
-    else if (cycle < 19) { setNodeState('tx'); setSignalStrength(Math.sin((cycle - 16) * 1.0) * 0.5 + 0.5); }
+    const cycleFrames = txInterval * 20; // 20 frames per second
+    const cycle = time % cycleFrames;
+    // Active phase is last 6 frames: 2 wake, 3 TX, 1 RX
+    const activeStart = cycleFrames - 6;
+    if (cycle < activeStart) { setNodeState('sleep'); setSignalStrength(0); }
+    else if (cycle < activeStart + 2) { setNodeState('wake'); setSignalStrength(0.3); }
+    else if (cycle < activeStart + 5) { setNodeState('tx'); setSignalStrength(Math.sin((cycle - activeStart - 2) * 1.0) * 0.5 + 0.5); }
     else { setNodeState('rx'); setSignalStrength(0.2); }
-  }, [time]);
+  }, [time, txInterval]);
 
   const SystemOverview = () => (
     <svg viewBox="0 0 1000 600" className="w-full h-full">
@@ -605,6 +615,9 @@ const TBMMISimulation = () => {
           <label>I_tx: <input type="range" min="0.1" max="2.0" step="0.1" value={txPower}
             onChange={(e) => setTxPower(Number(e.target.value))} />
             <span className="value">{txPower.toFixed(1)}A</span></label>
+          <label>TX Rate: <input type="range" min="0.5" max="10" step="0.5" value={txInterval}
+            onChange={(e) => setTxInterval(Number(e.target.value))} />
+            <span className="value">{txInterval}s</span></label>
         </div>
         <div className="controls-row">
           <label>TX⌀: <input type="range" min="10" max="50" step="5" value={txLoopDiameter}
