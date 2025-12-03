@@ -394,7 +394,7 @@ const TBMMISimulation = () => {
           <line x1="0" y1="160" x2="360" y2="160" stroke="#484f58" strokeWidth="1" />
           <line x1="0" y1="0" x2="0" y2="160" stroke="#484f58" strokeWidth="1" />
           
-          {[0, 50, 100, 150, 200].map((v, i) => (
+          {[0, 25, 50, 75, 100].map((v, i) => (
             <g key={i}>
               <text x="-10" y={160 - i * 40} textAnchor="end" fill="#8b949e" fontSize="9">{v}m</text>
               <line x1="0" y1={160 - i * 40} x2="360" y2={160 - i * 40} stroke="#21262d" strokeWidth="1" />
@@ -410,19 +410,19 @@ const TBMMISimulation = () => {
               const f = (i + 1) * 1000;
               const delta = Math.sqrt(2 / (2 * Math.PI * f * MU_0 * muckConductivity));
               const x = i * 15;
-              const y = 160 - Math.min(160, delta * 0.8);
+              const y = 160 - Math.min(160, delta * 1.6);
               return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
             }).join(' ')}
             fill="none" stroke="#58a6ff" strokeWidth="2"
           />
-          
-          <g transform={`translate(${(frequency / 1000 - 1) * 15}, ${160 - Math.min(160, calculations.skinDepth * 0.8)})`}>
+
+          <g transform={`translate(${(frequency / 1000 - 1) * 15}, ${160 - Math.min(160, calculations.skinDepth * 1.6)})`}>
             <circle cx="0" cy="0" r="6" fill="#f0883e" stroke="#ffa657" strokeWidth="2" />
             <text x="10" y="4" fill="#ffa657" fontSize="10">δ = {calculations.skinDepth.toFixed(1)}m</text>
           </g>
-          
-          <line x1="0" y1={160 - distance * 0.8} x2="360" y2={160 - distance * 0.8} stroke="#f85149" strokeWidth="1" strokeDasharray="5,5" />
-          <text x="365" y={160 - distance * 0.8 + 4} fill="#f85149" fontSize="9">d={distance}m</text>
+
+          <line x1="0" y1={160 - distance * 1.6} x2="360" y2={160 - distance * 1.6} stroke="#f85149" strokeWidth="1" strokeDasharray="5,5" />
+          <text x="365" y={160 - distance * 1.6 + 4} fill="#f85149" fontSize="9">d={distance}m</text>
         </g>
         <text x="220" y="230" textAnchor="middle" fill="#8b949e" fontSize="10">Frequency (kHz)</text>
       </g>

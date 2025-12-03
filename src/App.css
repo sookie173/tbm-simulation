@@ -84,7 +84,7 @@ body {
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   margin-bottom: 8px;
 }
 
@@ -122,7 +122,7 @@ body {
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   font-size: 12px;
   color: #6b7280;
 }
